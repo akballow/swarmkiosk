@@ -57,17 +57,28 @@ docker swarm join --token XXXXX XXX.XXX.XXX.XXX:2377
 ```
 Test that chrome kiosk works on the local node
 ```
-docker run -v /tmp/.X11-unix:/tmp/.X11-unix --memory 512mb -e DISPLAY=unix$DISPLAY kiril.ballow/chrome:lastest https://www.docker.com/
+docker run -v /tmp/.X11-unix:/tmp/.X11-unix --memory 512mb \
+-e DISPLAY=unix$DISPLAY kiril.ballow/chrome:lastest https://www.docker.com/
 ```
 If you see chrome load, then everything is set. If you get display can not be found, you need to check that you applied 'xhost +local:root' on the Pi.
 
 
 ## Create the first container to visualize the containers:
+On the Manager run the following command for the type of hardware
+Manager that is not a Pi (other then armhf):
 ```
-sudo docker service create --name viz-pi --publish 8081:8080/tcp --constraint node.role==manager --mount type=bind,src=/var/run/docker.sock,dst=/var/run/docker.sock alexellis2/visualizer-arm
-docker run -v /tmp/.X11-unix:/tmp/.X11-unix --memory 512mb -e DISPLAY=unix$DISPLAY icebob/chromium-armhf https://www.docker.com/
+docker service create --name=viz --publish=8080:8080/tcp --constraint=node.role==manager \
+--mount=type=bind,src=/var/run/docker.sock,dst=/var/run/docker.sock dockersamples/visualizer
+```
+Manager which is a Pi (armhf):
+```
+sudo docker service create --name viz-pi --publish 8080:8080/tcp \
+--constraint node.role==manager --mount type=bind,src=/var/run/docker.sock,dst=/var/run/docker.sock \
+alexellis2/visualizer-arm
 ```
 
+docker run -v /tmp/.X11-unix:/tmp/.X11-unix --memory 512mb -e DISPLAY=unix$DISPLAY icebob/chromium-armhf https://www.docker.com/
+```
 # credit
 I wanted to give credit to https://github.com/icebob/docker-chromium-armhf for the dockerfile source which built thid program.
 
