@@ -1,4 +1,4 @@
-# swarmkiosk for armhf: Raspberry Pi Docker Swarm Kiosk
+# Raspberry Pi Docker Swarm Kiosk: swarmkiosk for armhf
 
 ## Requirements
 1. Atleast 1 static IP for the docker manager, preferably two.
