@@ -1,4 +1,4 @@
-# swarmkiosk for armhf
+# swarmkiosk for armhf: Raspberry Pi Docker Swarm Kiosk
 
 ## Requirements
 1. Atleast 1 static IP for the docker manager, preferably two.
@@ -24,28 +24,38 @@ Start the Swarm
 ```
 docker swarm init
 ```
-Get the join token for your workers or other managers
+Get the join token for your workers
 ```
 docker swarm join-token worker
-docker swarm join-token manager
 ```
 
 
-## Preparing the Raspberry Pi
+## Preparing the Raspberry Pi's
 I recommend you to pull out that SD card from your pi and reformat it and install the latest fresh NOOBS software on it.
-Install the full Raspberry OS and apt-get update, apt-get upgrade it.
+Install the Raspberry OS with gui (if you are new to this)
+update the software
 ```
-raspi-config \\ Enable SSH and VNC
-curl -sSL get.docker.com | sh
-docker swarm join --token XXXXX XXX.XXX.XXX.XXX:2377 \\ You got this from the docker swarm join-token command
+apt-get update
+apt-get upgrade
 ```
-
-## Running
+Enable VNC and SSH
+```
+raspi-config 
+```
 On the host, you need to allow the docker user access to your local X session
 ```
-xhost +local:docker
+xhost +local:root
+echo "xhost +local:root" >> ~/.profile
 ```
-If `xhost` is not found, install the `x11-xserver-utils` package.
+Install Docker
+```
+curl -sSL get.docker.com | sh
+```
+Join the swarm using the output from the 'docker swarm join-token worker' from the manager
+```
+docker swarm join --token XXXXX XXX.XXX.XXX.XXX:2377
+```
+
 
 ## Run the container:
 ```
