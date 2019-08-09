@@ -16,9 +16,16 @@ docker build -t kirilballow/chrome .
 This could be a server which can have a static ip set, or another raspberry pi which can have the static ip set. 
 The manager needs to have a static ip because if the ip changes, the whole swarm will have issues.
 I also do not recommend the Raspberry Pi to be the manager as the resources are already sparse.
+Install Docker
 ```
-curl -sSL get.docker.com | sh`
+curl -sSL get.docker.com | sh
+```
+Start the Swarm
+```
 docker swarm init
+```
+Get the join token for your workers or other managers
+```
 docker swarm join-token worker
 docker swarm join-token manager
 ```
