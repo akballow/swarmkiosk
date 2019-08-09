@@ -30,7 +30,7 @@ docker swarm join-token worker
 ```
 
 
-## Preparing the Raspberry Pi's
+## Preparing the Raspberry Pi's (Each Pi)
 I recommend you to pull out that SD card from your pi and reformat it and install the latest fresh NOOBS software on it.
 Install the Raspberry OS with gui (if you are new to this)
 update the software
@@ -41,6 +41,12 @@ apt-get upgrade
 Enable VNC and SSH
 ```
 raspi-config 
+```
+Disable screen power management (`export DISPLAY=:0` on ssh or run in local terminal)
+```
+xset s noblank
+xset s off
+xset -dpms
 ```
 On the host, you need to allow the docker user access to your local X session
 ```
@@ -60,11 +66,10 @@ Test that chrome kiosk works on the local node
 docker run -v /tmp/.X11-unix:/tmp/.X11-unix --memory 512mb \
 -e DISPLAY=unix$DISPLAY kiril.ballow/chrome:lastest https://www.docker.com/
 ```
-If you see chrome load, then everything is set. If you get display can not be found, you need to check that you applied 'xhost +local:root' on the Pi.
+If you see chrome load with the website docker.com, then everything is set. If you get display :0 can not be found, you need to check that you applied 'xhost +local:root' on the Pi.
 
-
-## Create the first container to visualize the containers:
-On the Manager run the following command for the type of hardware
+## Create the first container to visualize the containers
+On the Manager run the following command for the type of hardware. Note that container images have to have the same hardware architecure to run. For example Pi's use armhf and servers are x86_64.
 Manager that is not a Pi (other then armhf):
 ```
 docker service create --name=viz --publish=8080:8080/tcp --constraint=node.role==manager \
@@ -76,9 +81,39 @@ sudo docker service create --name viz-pi --publish 8080:8080/tcp \
 --constraint node.role==manager --mount type=bind,src=/var/run/docker.sock,dst=/var/run/docker.sock \
 alexellis2/visualizer-arm
 ```
+You can now visit the website <Manager-IP>:8080 to see the swarm with the single viz container. If you can not hit the IP, make sure firewall allows the port.
 
-docker run -v /tmp/.X11-unix:/tmp/.X11-unix --memory 512mb -e DISPLAY=unix$DISPLAY icebob/chromium-armhf https://www.docker.com/
+## Create the first broadcasted kiosk website
+Lets make website docker.com load on all the Pi's at the same time.
 ```
+docker service create --name=Website1 --replicas=0 --replicas-max-per-node=1 \
+--mount type=bind,src=/tmp/.X11-unix,dst=/tmp/.X11-unix --env DISPLAY=:0 \
+kirilballow/chrome https://docker.com
+```
+Quick explination of options
+1. --name is the name of the service
+2. --replicas is the number of copies of it. we start with 0, so we can enable it later.
+3. --replicas-max-per-node is number of replicas we want on a node. We set this to 1 since we only need on per node. An alternive to --replicas and --replicas-max-per-node is to set the mode to global with --mode=global. The issue with global service is that you can not disable it, you can just set a constraint value to something that doesnt exsist. Basicly if you know what you are doing using global is better overall.
+4. --mount, this one is tricker to understand. We want to bind local host path to the continer path for the x11 display server. this is how the docker continaer knows which local host display to use. 
+5. --env we want to set the DISPLAY env to the local host display which is typically :0
+
+Starting the service, get the number of Pi's and set the replicas to it. 
+```
+docker service update Website1 --replicas=<Number_Of_Pi's>
+```
+
+At this time you will hopefully see every Pi display the website now. You can even visit the <Manager-IP>:8080 on the webbrowser to see that each worker should have a continer spun up.
+  
+To switch the website, change the argument
+```
+docker service update Website1 --args="test.com"
+```
+  
+To stop the service, set the replicas to 0 again.
+```
+docker service update Website1 --replicas=0
+```
+
 # credit
 I wanted to give credit to https://github.com/icebob/docker-chromium-armhf for the dockerfile source which built thid program.
 
